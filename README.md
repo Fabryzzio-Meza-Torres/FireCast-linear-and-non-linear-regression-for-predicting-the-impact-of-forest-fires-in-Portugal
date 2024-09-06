@@ -1,0 +1,1 @@
+# FireCast-linear-and-non-linear-regression-for-predicting-the-impact-of-forest-fires-in-Portugal
