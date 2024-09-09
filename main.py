@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import train_test_split as tts
 import seaborn as sb
+from sklearn.metrics import r2_score
+
 
 # we're mapping days and months to their corresponding numeric values. not using 0 cause multiplying by 0 is a big nono
 day_mapping = {'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6, 'sun': 7}
@@ -12,6 +14,7 @@ month_mapping = {'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
 # item 2: non linear regression
 def h(x, w):
     return np.dot(x, w.T) # returns a column vector
+
 
 def error(x, w, y, lamb, reg ="none"):
     if(reg == "lasso"):
@@ -24,6 +27,7 @@ def error(x, w, y, lamb, reg ="none"):
         raise Exception("error function did not recognize the regularization type " + reg + ".\n Did you mean to use lasso, ridge, or none?")
 # todo: fix this thing, everything is nan
 
+
 def derivative(x, w, y, lamb):
     diff = y - h(x, w) # col - col
     num = np.dot(diff.T, -x) # numerator
@@ -31,8 +35,10 @@ def derivative(x, w, y, lamb):
     reg = 2 * lamb * w
     return num/den + reg/den
 
+
 def update(w, d_w, alpha):
     return w - alpha * d_w # alpha measures how much the model reacts to each derivative change
+
 
 def linear_train(x, y, e, alpha, lamb, debug):
     np.random.seed(2001)
@@ -57,44 +63,54 @@ def linear_train(x, y, e, alpha, lamb, debug):
         if (i % debug == 0): 
             print(f"Error at iteration {i}: {l}") # prints the error every "debug" iterations
 
-    return w, loss 
+    return w, loss
 
-def linear_init():
-    # item 1 : dataset loading and preview
-    data = pd.read_csv("./forestfires.csv")
-    x = data[["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain"]]
-    y = data[["area"]]
-    # preview pending lmao
 
-    # map strings to numeric values
-    x['day'] = x['day'].map(day_mapping)
-    x['month'] = x['month'].map(month_mapping)
+# item 1 : dataset loading and preview
+data = pd.read_csv("./forestfires.csv")
+x = data[["X", "Y", "month", "day", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain"]]
+y = data[["area"]]
+# preview pending lmao
 
-    # conversion to np arrays because python is awful
-    x = np.array(x)
-    y = np.array(y)
+# map strings to numeric values
+x['day'] = x['day'].map(day_mapping)
+x['month'] = x['month'].map(month_mapping)
 
-    # normalization
-    for i in range(x.shape[1]):
-        col = x[:, i]  # Get the column
-        col = (np.min(col) - col) / (np.max(col) - np.min(col))  # Apply the transformation
-        x[:, i] = col  # Update the column in the original matrix
-    y  = (min(y) - y)/(max(y) - min(y))
+# conversion to np arrays because python is awful
+x = np.array(x)
+y = np.array(y)
 
-    # item 4 : dataset splitting
-    x_train, x_test, y_train, y_test = tts(x, y, random_state=104, test_size=0.30, shuffle=True)
+# normalization
+for i in range(x.shape[1]):
+    col = x[:, i]  # Get the column
+    col = (np.min(col) - col) / (np.max(col) - np.min(col))  # Apply the transformation
+    x[:, i] = col  # Update the column in the original matrix
+y  = (min(y) - y)/(max(y) - min(y))
 
-    # item 2: non linear regression (training)
-    w, l = linear_train(x, y, 10000, 0.01, 0.1, 500)
-    # trains according to features in x and results in y, does 10000 iterations, alpha is 0.9, lambda is 0, prints error every 500 iterations
+# item 4 : dataset splitting
+x_train, x_test, y_train, y_test = tts(x, y, random_state=104, test_size=0.30, shuffle=True)
 
-    plt.plot(l)
-    plt.xlabel('Iterations')
-    plt.ylabel('Loss')
-    plt.title('Loss Over Iterations')
-    plt.show()
+# item 2: non linear regression (training)
+w, l = linear_train(x, y, 10000, 0.01, 0.1, 500)
+# trains according to features in x and results in y, does 10000 iterations, alpha is 0.9, lambda is 0, prints error every 500 iterations
 
-linear_init()
+plt.plot(l)
+plt.xlabel('Iterations')
+plt.ylabel('Loss')
+plt.title('Loss Over Iterations')
+plt.show()
 
+x = np.hstack( (np.ones((x.shape[0], 1)), x)) # adds a first column of 0s, so it can be multiplied with the transposed of w
+y_aprox = h(x,w)
+# y_aprox = h(X_poly,w)
+plt.plot(y, "o")
+plt.plot(y_aprox, "*")
+plt.show()
+
+den_r2 = (y - np.mean(y))**2
+num_r2 = (y_aprox - np.mean(y))**2
+r2 = np.sum(num_r2) / np.sum(den_r2)
+print(r2)
+print(r2_score(y,y_aprox))
 
 # todo: nonlinear shenanigans
