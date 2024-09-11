@@ -18,9 +18,9 @@ def h(x, w):
 
 def error(x, w, y, lamb, reg ="none"):
     if(reg == "lasso"):
-        return (np.linalg.norm(y - h(x,w)) ** 2) / (2 * len(x)) # todo: add lasso regularization
+        return (np.linalg.norm(y - h(x,w)) ** 2) / (2 * len(x)) +lamb*abs(np.sum(w)) # todo: add lasso regularization
     elif(reg == "ridge"):
-        return (np.linalg.norm(y - h(x,w)) ** 2) / (2 * len(x)) # todo: add ridge regularization
+        return (np.linalg.norm(y - h(x,w)) ** 2) / (2 * len(x))+lamb*np.sum(w ** 2) # todo: add ridge regularization
     elif(reg == "none"):
         return (np.linalg.norm(y - h(x,w)) ** 2) / (2 * len(x))
     else:
